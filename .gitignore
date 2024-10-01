@@ -1,1 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Environment variables
 .env
+
+# Other files or folders to ignore
+*.sqlite3
+*.db
+*.log
