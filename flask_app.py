@@ -2,66 +2,74 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
-from langchain.document_loaders import TextLoader
+from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Pinecone
-from langchain.llms import HuggingFaceHub
+from langchain_huggingface import HuggingFaceEndpoint
+from langchain_community.vectorstores import Pinecone
+from langchain_community.llms import HuggingFaceHub
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema.output_parser import StrOutputParser
 import pinecone
+from langchain_core.prompts import PromptTemplate
+from langchain_huggingface import HuggingFaceEmbeddings
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS
+CORS(app)  
 
 load_dotenv()
 
-# Pinecone initialization
+# Check if API keys are loaded
+pinecone_api_key = os.getenv('PINECONE_API_KEY')
+if not pinecone_api_key:
+    raise ValueError("Pinecone API key not found")
 pinecone.init(
-    api_key=os.getenv('API_KEY_PINECONE'),
+    api_key=pinecone_api_key,
     environment=os.getenv('PINECONE_ENV')
 )
 
-# Data loading and splitting
+# Text loading and splitting
 loader = TextLoader('data.txt')
 documents = loader.load()
-text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=4)  # Adjusted chunk size
+text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=4) 
 docs = text_splitter.split_documents(documents)
 
-# Create embeddings and index in Pinecone
+# Embedding and Pinecone index
 embeddings = HuggingFaceEmbeddings()
 index_name = "arya-data-base"
+docsearch = Pinecone.from_existing_index(index_name, embeddings)
 
-if index_name not in pinecone.list_indexes():
-    pinecone.create_index(name=index_name, metric="cosine", dimension=768)
-    docsearch = Pinecone.from_documents(docs, embeddings, index_name=index_name)
-else:
-    docsearch = Pinecone.from_existing_index(index_name, embeddings)
-
-# Set up LLM from HuggingFace
+# HuggingFace LLM setup
 repo_id = "mistralai/Mixtral-8x7B-Instruct-v0.1"
-llm = HuggingFaceHub(
-    repo_id=repo_id, 
-    model_kwargs={"temperature": 0.8, "top_k": 50}, 
-    huggingfacehub_api_token=os.getenv('HUGGING_FACE_API')
+endpoint_url = f"https://api-inference.huggingface.co/models/{repo_id}"
+
+huggingface_api_token = os.getenv('HUGGING_FACE_API')
+if not huggingface_api_token:
+    raise ValueError("Hugging Face API token not found")
+
+llm = HuggingFaceEndpoint(
+    endpoint_url=endpoint_url,
+    huggingfacehub_api_token=huggingface_api_token,
+    temperature=0.8, 
+    top_k=50 
 )
 
-# Prompt template
+# Prompt setup
 template = """
-You are a Hostel warden. Humans will ask you questions about the Arya Bhatt Hostel. 
-Use the following context to answer the question. 
+You are Arya, the official bot of Arya Bhatt Hostel. Humans will ask you questions about the Arya Bhatt Hostel. 
+Use the following context to answer the question from the vector database only. 
 If you don't know the answer, just say you don't know. 
 Keep the answer within 1 sentence and concise.
 
 Question: {question}
 Answer:
 """
+
 prompt = PromptTemplate(
     template=template, 
-    input_variables=["context", "question"]
+    input_variables=["question"]
 )
 
-# Chain
+# Create RAG pipeline
 rag_chain = (
     {"context": docsearch.as_retriever(), "question": RunnablePassthrough()}
     | prompt
@@ -69,92 +77,19 @@ rag_chain = (
     | StrOutputParser()
 )
 
+# Chatbot route
 @app.route('/chatbot', methods=['POST'])
 def chatbot():
-    user_input = request.json.get('message')
-    response = rag_chain.invoke(user_input)
-    return jsonify({'response': response})
+    try:
+        user_input = request.json.get('message', "")
+        if not isinstance(user_input, str) or not user_input.strip():
+            return jsonify({'error': 'Invalid input message provided'}), 400
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
-from flask import Flask, request, jsonify
-import os
-from dotenv import load_dotenv
-from langchain.document_loaders import TextLoader
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Pinecone
-from langchain.llms import HuggingFaceHub
-from langchain import PromptTemplate
-from langchain.schema.runnable import RunnablePassthrough
-from langchain.schema.output_parser import StrOutputParser
-import pinecone
+        response = rag_chain.invoke(user_input)
+        return jsonify({'response': response})
 
-app = Flask(__name__)
-
-load_dotenv()
-
-pinecone.init(
-    api_key=os.getenv('API_KEY_PINECONE'),
-    environment='gcp-starter'
-)
-
-# Data loading and splitting
-loader = TextLoader('data.txt')
-documents = loader.load()
-text_splitter = CharacterTextSplitter(chunk_size=100, chunk_overlap=4)
-docs = text_splitter.split_documents(documents)
-
-# Create embeddings and index in Pinecone
-embeddings = HuggingFaceEmbeddings()
-index_name = "arya-data-base"
-
-if index_name not in pinecone.list_indexes():
-    pinecone.create_index(name=index_name, metric="cosine", dimension=768)
-    docsearch = Pinecone.from_documents(docs, embeddings, index_name=index_name)
-else:
-    docsearch = Pinecone.from_existing_index(index_name, embeddings)
-
-# Set up LLM from HuggingFace
-repo_id = "mistralai/Mixtral-8x7B-Instruct-v0.1"
-llm = HuggingFaceHub(
-    repo_id=repo_id, 
-    model_kwargs={"temperature": 0.8, "top_k": 50}, 
-    huggingfacehub_api_token=os.getenv('HUGGING_FACE_API')
-)
-
-# Prompt template
-template = """
-You are a Hostel warden. Humans will ask you questions about the Arya Bhatt Hostel. 
-Use the following context to answer the question. 
-If you don't know the answer, just say you don't know. 
-Keep the answer within 1 sentence and concise.
-
-Context: {context}
-Question: {question}
-Answer:
-"""
-prompt = langchain.prompts.PromptTemplate(
-    template=template, 
-    input_variables=["context", "question"]
-)
-
-# Ensure only the answer is returned by parsing the response properly
-rag_chain = (
-    {"context": docsearch.as_retriever(), "question": RunnablePassthrough()}
-    | prompt
-    | llm
-    | StrOutputParser()
-)
-
-@app.route('/chatbot', methods=['POST'])
-def chatbot():
-    user_input = request.json.get('message')
-    
-    # Use the chain to get the response
-    response = rag_chain.invoke(user_input)
-    
-    return jsonify({'response': response})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
