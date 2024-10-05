@@ -12,40 +12,47 @@ function sendMessage() {
     let inputBox = document.getElementById("user-input");
     let userMessage = inputBox.value.trim();
 
-    if (userMessage === "") return;  // Don't send empty messages
+    if (userMessage === "") return;
 
-    appendMessage("user", userMessage);  // Display user's message in chat
-    inputBox.value = "";  // Clear the input box
+    appendMessage("user", userMessage);
+    appendMessage("assistant", "Thinking...");  
 
-    // Make a POST request to the Flask backend
+    inputBox.value = "";
+
     fetch('http://127.0.0.1:5000/chatbot', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',  // Tell the backend you're sending JSON
+            'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: userMessage }),  // Send the user's message
+        body: JSON.stringify({ message: userMessage }),
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error("Network response was not ok");
-        }
-        return response.json();  // Parse JSON response
-    })
+    .then(response => response.json())
     .then(data => {
-        appendMessage("assistant", data.response);  // Display assistant's response
+        removeLastAssistantMessage();
+        appendMessage("assistant", data.response);
     })
     .catch((error) => {
         console.error('Error:', error);
-        appendMessage("assistant", "Sorry, something went wrong.");  // Handle errors
+        appendMessage("assistant", "Sorry, something went wrong.");
     });
 }
 
 function appendMessage(role, message) {
-    let chatBox = document.getElementById("chat-box");  // Find chat box element
-    let messageElement = document.createElement("div");  // Create a new message div
-    messageElement.classList.add("message", role);  // Add the appropriate classes
-    messageElement.textContent = message;  // Set the message text
+    let chatBox = document.getElementById("chat-box");
+    let messageElement = document.createElement("div");
+    messageElement.classList.add("message", role);
+    messageElement.textContent = message;
 
-    chatBox.appendChild(messageElement);  // Add the message to the chat box
-    chatBox.scrollTop = chatBox.scrollHeight;  // Auto-scroll to the bottom
+    chatBox.appendChild(messageElement);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+
+function removeLastAssistantMessage() {
+    let chatBox = document.getElementById("chat-box");
+    let messages = chatBox.getElementsByClassName("message assistant");
+
+    if (messages.length > 0) {
+        chatBox.removeChild(messages[messages.length - 1]);
+    }
 }
