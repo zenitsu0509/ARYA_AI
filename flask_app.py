@@ -12,7 +12,8 @@ from langchain.schema.output_parser import StrOutputParser
 import pinecone
 from langchain_core.prompts import PromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings
-
+from pinecone import Pinecone, ServerlessSpec
+from langchain_pinecone import PineconeVectorStore
 app = Flask(__name__)
 CORS(app)  
 
@@ -20,12 +21,7 @@ load_dotenv()
 
 # Check if API keys are loaded
 pinecone_api_key = os.getenv('PINECONE_API_KEY')
-if not pinecone_api_key:
-    raise ValueError("Pinecone API key not found")
-pinecone.init(
-    api_key=pinecone_api_key,
-    environment=os.getenv('PINECONE_ENV')
-)
+pc = Pinecone(api_key=pinecone_api_key)
 
 # Text loading and splitting
 loader = TextLoader('data.txt')
@@ -36,7 +32,8 @@ docs = text_splitter.split_documents(documents)
 # Embedding and Pinecone index
 embeddings = HuggingFaceEmbeddings()
 index_name = "arya-data-base"
-docsearch = Pinecone.from_existing_index(index_name, embeddings)
+index = pc.Index(index_name)
+docsearch = PineconeVectorStore(index=index, embedding=embeddings)
 
 # HuggingFace LLM setup
 repo_id = "mistralai/Mixtral-8x7B-Instruct-v0.1"

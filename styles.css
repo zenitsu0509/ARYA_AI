@@ -26,10 +26,6 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 989c7e7cff7f21d9c8b01dd7b05706f146e32574
 .chat-box {
   flex: 1;
   padding: 20px;
@@ -41,30 +37,6 @@ body {
   border-bottom: 1px solid #444;
 }
 
-<<<<<<< HEAD
-=======
-.message {
-  margin-bottom: 15px;
-  padding: 10px;
-  border-radius: 10px;
-  max-width: 70%;
-}
-
-.message.assistant {
-  background-color: #007acc;
-  color: #fff;
-  align-self: flex-start;
-}
-
-.message.user {
-  background-color: #4caf50;
-  color: #fff;
-  align-self: flex-end;
-  text-align: right;
-}
-
-
->>>>>>> 989c7e7cff7f21d9c8b01dd7b05706f146e32574
 .input-box {
   display: flex;
   padding: 10px;
@@ -124,24 +96,6 @@ body {
   color: #ccc;
 }
 
-<<<<<<< HEAD
-=======
-button {
-  padding: 10px 20px;
-  background-color: #007acc;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  margin-left: 10px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #005999;
-}
-
-
->>>>>>> 989c7e7cff7f21d9c8b01dd7b05706f146e32574
 .chat-box::-webkit-scrollbar {
   width: 8px;
 }
@@ -155,7 +109,6 @@ button:hover {
   background-color: #2C2C2C;
 }
 
-<<<<<<< HEAD
 @media (max-width: 768px) {
   .main-container {
       flex-direction: column;
@@ -166,36 +119,5 @@ button:hover {
   .info-section {
       margin-left: 0;
       margin-top: 10px;
-=======
-
-.slide-container {
-  position: absolute;
-  top: 10px;
-  left: -400px; 
-  animation: slide-in-left 2.5s forwards;
-  text-align: left;
-}
-
-.sliding-text {
-  font-size: 36px; 
-  color: #007acc;
-  font-weight: bold;
-}
-
-.small-text {
-  display: block;
-  font-size: 16px; 
-  color: #bbb;
-  margin-top: 5px;
-}
-
-
-@keyframes slide-in-left {
-  0% {
-      left: -400px; 
-  }
-  100% {
-      left: 20px; 
->>>>>>> 989c7e7cff7f21d9c8b01dd7b05706f146e32574
   }
 }
