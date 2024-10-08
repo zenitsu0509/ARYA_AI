@@ -65,8 +65,12 @@ qa_chain = RetrievalQA.from_chain_type(
 )
 
 # Streamlit App Interface
-st.title("Arya Bhatt Hostel Chatbot")
+st.title("ARYA(Arya Bhatt offical Chat Bot)")
 st.write("Ask me anything about Arya Bhatt Hostel!")
+
+# Initialize chat history in session state
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
 # Input for user question
 user_question = st.text_input("Your Question:")
@@ -77,11 +81,20 @@ if user_question:
         # Get the response using invoke instead of run
         response = qa_chain.invoke(user_question)
         
-        # Extract the chatbot's response and print it
+        # Extract the chatbot's response
         chatbot_response = response['result']
         
-        # Display the chatbot response
-        st.write(f"**Chatbot Response:** {chatbot_response}")
-        
-        # Optionally display the source document
-        
+        # Add the question and response to the chat history
+        st.session_state.chat_history.append({"question": user_question, "response": chatbot_response})
+
+if st.session_state.chat_history:
+    st.write("### Chat History")
+    for i, chat in enumerate(st.session_state.chat_history):
+        st.write(f"**You:** {chat['question']}")
+        st.write(f"**ARYA:** {chat['response']}")
+
+# Footer
+st.markdown("""
+---
+Developed and maintained by **Himanshu**
+""")
