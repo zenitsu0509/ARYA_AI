@@ -2,3 +2,4 @@ streamlit
 python-dotenv
 pinecone-client
 langchain
+langchain_pinecone
