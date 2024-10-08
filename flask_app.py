@@ -22,8 +22,29 @@ load_dotenv()
 # Check if API keys are loaded
 pinecone_api_key = os.getenv('PINECONE_API_KEY')
 pc = Pinecone(api_key=pinecone_api_key)
+import pinecone
+import os
 
-# Text loading and splitting
+# Initialize Pinecone
+pinecone_api_key = os.getenv('PINECONE_API_KEY')
+pinecone_environment = "us-west1-gcp"  # Set this to your correct environment
+
+# Ensure API key is provided
+if not pinecone_api_key:
+    raise ValueError("Pinecone API key not found.")
+
+# Create the Pinecone client
+
+
+# Create the index client
+index_name = "arya-data-base"
+pc = pinecone.Index(index_name)
+
+# Check if the index exists in the list of indexes
+if index_name not in pinecone.list_indexes():
+    raise ValueError(f"Index '{index_name}' does not exist.")
+
+
 loader = TextLoader('data.txt')
 documents = loader.load()
 text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=4) 
@@ -40,6 +61,7 @@ repo_id = "mistralai/Mixtral-8x7B-Instruct-v0.1"
 endpoint_url = f"https://api-inference.huggingface.co/models/{repo_id}"
 
 huggingface_api_token = os.getenv('HUGGING_FACE_API')
+
 if not huggingface_api_token:
     raise ValueError("Hugging Face API token not found")
 
@@ -50,7 +72,6 @@ llm = HuggingFaceEndpoint(
     top_k=50 
 )
 
-# Prompt setup
 template = """
 You are Arya, the official bot of Arya Bhatt Hostel. Humans will ask you questions about the Arya Bhatt Hostel. 
 Use the following context to answer the question from the vector database only. 
@@ -82,11 +103,13 @@ def chatbot():
         if not isinstance(user_input, str) or not user_input.strip():
             return jsonify({'error': 'Invalid input message provided'}), 400
 
-        response = rag_chain.invoke(user_input)
-        return jsonify({'response': response})
-
+        # Instead of invoking RAG chain, return a mock response
+        return jsonify({'response': f'Mock response to: {user_input}'})
+        
     except Exception as e:
+        print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
