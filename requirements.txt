@@ -1,12 +1,4 @@
-fastapi
-flask
-flask-cors
+streamlit
 python-dotenv
-langchain
 pinecone-client
-huggingface-hub
-uvicorn
-langchain-community
-langchain-huggingface
-
-
+langchain
